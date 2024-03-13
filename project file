@@ -1,0 +1,76 @@
+What's in an Avocado Toast: A Supply Chain Analysis
+You're in London, making an avocado toast, a quick-to-make dish that has soared in popularity on breakfast menus since the 2010s. A simple smashed avocado toast can be made with five ingredients: one ripe avocado, half a lemon, a big pinch of salt flakes, two slices of sourdough bread and a good drizzle of extra virgin olive oil. It's no small feat that most of these ingredients are readily available in grocery stores.
+
+In this project, you'll conduct a supply chain analysis of three of these ingredients used in an avocado toast, utilizing the Open Food Facts database. This database contains extensive, openly-sourced information on various foods, including their origins. Through this analysis, you will gain an in-depth understanding of the complex supply chain involved in producing a single dish.
+
+Three pairs of files are provided in the data folder:
+
+A CSV file for each ingredient, such as avocado.csv, with data about each food item and countries of origin
+A TXT file for each ingredient, such as relevant_avocado_categories, containing only the category tags of interest for that food.
+Here are some other key points about these files:
+
+Some of the rows of data in each of the three CSV files do not contain relevant data for your investigation. In each dataset, you will need to filter out rows with irrelevant data, based on values in the categories_tags column. Examples of categories are, fruits, vegetables, and fruit-based oils. Filter the DataFrame to include only rows where categories_tags contains one of the tags in the relevant categories for that ingredient.
+Each row of data usually has multiple categories tags in the categories_tags column.
+There is a column in each CSV file called origins_tags with strings for country of origin of that item.
+After completing this project, you'll be armed with a list of ingredients and their countries of origin, and be well-positioned to launch into other analyses that explore how long, on average, these ingredients spend at sea.
+
+import pandas as pd
+
+avocado = pd.read_csv('data/avocado.csv', sep='\t')
+
+subset_columns = [ 'code', 'lc', 'product_name_en', 'quantity', 'serving_size', 'packaging_tags', 'brands', 'brands_tags', 'categories_tags', 'labels_tags', 'countries', 'countries_tags', 'origins','origins_tags']
+avocado = avocado[subset_columns]
+
+with open("data/relevant_avocado_categories.txt", "r") as file:
+relevant_avocado_categories = file.read().splitlines()
+file.close()
+
+avocado['categories_list'] = avocado['categories_tags'].str.split(',')
+avocado = avocado.dropna(subset = 'categories_list')
+avocado = avocado[avocado['categories_list'].apply(lambda x: any([i for i in x if i in relevant_avocado_categories]))]
+avocados_uk = avocado[(avocado['countries']=='United Kingdom')]
+avocado_origin = (avocados_uk['origins_tags'].value_counts().index[0])
+avocado_origin = avocado_origin.lstrip("en:")
+
+def read_and_filter_data(filename, relevant_categories):
+df = pd.read_csv('data/' + filename, sep='\t')
+subset_columns = [ 'code', 'lc', 'product_name_en', 'quantity', 'serving_size', 'packaging_tags', 'brands', 'brands_tags', 'categories_tags', 'labels_tags', 'countries', 'countries_tags', 'origins','origins_tags']
+df = df[subset_columns]
+df['categories_list'] = df['categories_tags'].str.split(',')
+df = df.dropna(subset = 'categories_list')
+df = df[df['categories_list'].apply(lambda x: any([i for i in x if i in relevant_categories]))]
+df_uk = df[(df['countries']=='United Kingdom')]
+top_origin_string = (df_uk['origins_tags'].value_counts().index[0])
+top_origin_country = top_origin_string.lstrip("en:")
+top_origin_country = top_origin_country.replace('-', ' ')
+
+print(f'**{filename[:-4]} origins**','\n', top_origin_country, '\n')
+print ("Top origin country: ", top_origin_country)
+print ("\n")
+
+return top_origin_country
+top_avocado_origin = read_and_filter_data('avocado.csv',relevant_avocado_categories)
+
+with open("data/relevant_olive_oil_categories.txt", "r") as file:
+relevant_olive_oil_categories = file.read().splitlines()
+file.close()
+
+top_olive_oil_origin = read_and_filter_data('olive_oil.csv',relevant_olive_oil_categories)
+with open("data/relevant_sourdough_categories.txt", "r") as file:
+relevant_sourdough_categories = file.read().splitlines()
+file.close()
+
+top_sourdough_origin = read_and_filter_data('sourdough.csv',relevant_sourdough_categories)
+​
+**avocado origins** 
+ peru 
+Top origin country:  
+peru
+**olive_oil origins** 
+ greece 
+Top origin country:  greece
+**sourdough origins** 
+ united kingdom 
+Top origin country:  united kingdom
+
+
